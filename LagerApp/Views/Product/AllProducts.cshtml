@@ -1,0 +1,127 @@
+﻿@model AllProductsVM
+@{
+    ViewData["Title"] = "Produkter";
+}
+
+<div class="container mt-4">
+    <div class="col-md-4">
+        <label for="articleNumberSearch" class="form-label">Sök produkt</label>
+        <div class="input-group">
+            <input type="text" class="form-control" id="articleNumberSearch" placeholder="Artikel Nummer" />
+            <button class="btn btn-primary" id="searchButton">Sök</button>
+            <button class="btn btn-danger ml-2" id="clearButton" style="margin-left: 10px;">Rensa</button>
+            <button class="btn btn-warning ml-2" id="deleteButton" style="margin-left: 10px;">Radera Produkt</button>
+        </div>
+        <br />
+        <div class="mt-2">
+            <button class="btn btn-secondary" id="exportButton">Exportera Databas</button>
+        </div>
+    </div>
+    <br />
+    <h2 class="mb-3">Produkter i lager</h2>
+    <div id="productTableContainer" class="table-responsive">
+        <partial name="_ProductTable" model="Model" />
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#searchButton').click(function () {
+            searchProduct();
+        });
+
+        $('#clearButton').click(function () {
+            clearSearch();
+        });
+
+        $('#deleteButton').click(function () {
+            deleteProduct();
+        });
+
+        $('#exportButton').click(function () {
+            exportDatabase();
+        });
+    });
+
+    function clearSearch() {
+        // Clear the text box
+        $('#articleNumberSearch').val('');
+
+        $.ajax({
+            url: '/Product/ClearSearch',
+            method: 'GET',
+            success: function (result) {
+                $('#productTableContainer').html(result);
+            },
+            error: function () {
+                console.error('AJAX, Failed to retrieve all products.');
+            }
+        });
+    }
+
+    function searchProduct() {
+        var articleNumber = $('#articleNumberSearch').val();
+
+        $.ajax({
+            url: '/Product/SearchProduct',
+            method: 'GET',
+            data: { articleNumber: articleNumber },
+            success: function (result) {
+                // Replace the content of the productTableContainer with the received HTML
+                $('#productTableContainer').html(result);
+            },
+            error: function () {
+                console.error('AJAX, Failed to perform the search.');
+            }
+        });
+    }
+
+    function deleteProduct() {
+        var articleNumber = $('#articleNumberSearch').val();
+
+        if (!articleNumber) {
+            alert('Var god och skriv in artikel nummer.');
+            return;
+        }
+        else {
+
+            var confirmation = confirm('Är du säker på att du vill radera produkt med artikel nummer: ' + articleNumber + '?');
+            if (confirmation) {
+                $.ajax({
+                    url: '/Product/DeleteProduct',
+                    method: 'POST',
+                    data: { articleNumber: articleNumber },
+                    success: function (result) {
+                        // Reload the products after deletion
+                        alert('Produkt raderad!')
+                        $('#productTableContainer').html(result);
+                        $('#articleNumberSearch').val('');
+                    },
+                    error: function () {
+                        console.error('AJAX, Failed to delete the product.');
+                    }
+                });
+            }
+        }
+    }
+
+    function exportDatabase() {
+        var confirmation = confirm('Exportera databas?');
+        if (confirmation) {
+            $.ajax({
+                url: '/Product/ExportDatabaseExcel',
+                method: 'POST',
+                success: function (result) {
+                    if (result.success) {
+                        alert(result.message); // Show success message
+                    } else {
+                        alert(result.message); // Show error message
+                    }
+                },
+                error: function () {
+                    console.error('AJAX, Failed export database.');
+                }
+            });
+        }
+    }
+</script>

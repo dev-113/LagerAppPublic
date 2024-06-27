@@ -1,0 +1,155 @@
+﻿@model ProductVM
+@{
+    ViewData["Title"] = "Produkter";
+}
+
+<section class="vh-100 gradient-custom">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+
+            <div id="centerText" style="text-align: center;"></div>
+
+
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="card bg-dark text-white" style="border-radius: 1rem;">
+                    <div class="card-body p-5 text-center">
+
+                        <div class="mb-md-5 mt-md-4 pb-5">
+                            <h2 class="fw-bold mb-2 text-uppercase">Lägg till produkter</h2>
+                            <p class="text-white-50 mb-5">Skriv in produkt information</p>
+                            <div class="form-outline form-white mb-4">
+                                <input type="button" id="typeGenerateArticleNumberX" class="form-control form-control-lg" value="Generera Artikel nummer" onclick="generateUniqueArticleNumber()" />
+                            </div>
+                            <div class="form-outline form-white mb-4">
+                                <input asp-for="ArticleNumber" type="text" id="typeArticleNumberX" class="form-control form-control-lg" placeholder="Artikel nummer" />
+                                <span asp-validation-for="ArticleNumber"></span>
+                            </div>
+                            <div class="form-outline form-white mb-4">
+                                <input asp-for="PurchasePrice" type="text" id="typePurchasePriceX" class="form-control form-control-lg" placeholder="Inköpspris" />
+                                <span asp-validation-for="PurchasePrice"></span>
+                            </div>
+                            <div class="form-outline form-white mb-4">
+                                <input asp-for="SellingPrice" type="text" id="typeSellingPriceX" class="form-control form-control-lg" placeholder="Pris" />
+                                <span asp-validation-for="SellingPrice"></span>
+                            </div>
+                            <div class="form-outline form-white mb-4">
+                                <input asp-for="Weight" type="text" id="typeWeightX" class="form-control form-control-lg" placeholder="Vikt" />
+                                <span asp-validation-for="Weight"></span>
+                            </div>
+                            <div class="form-outline form-white mb-4">
+                                <input type="text" id="typeDimensionX" class="form-control form-control-lg" placeholder="Mått" /> @* Behöver inte ha asp-for för mått eftersom kunde inte alltid kommer att sätta den. *@
+                            </div>
+                            <div class="form-outline form-white mb-4">
+                                <input asp-for="Material" type="text" id="typeMaterialX" class="form-control form-control-lg" placeholder="Material" />
+                                <span asp-validation-for="Material"></span>
+                            </div>
+                            <div class="form-outline form-white mb-4">
+                                <input asp-for="Quantity" type="text" id="typeQuantityX" class="form-control form-control-lg" placeholder="Antal" />
+                                <span asp-validation-for="Quantity"></span>
+                            </div>
+                            <div>
+                                <button class="btn btn-outline-light btn-lg px-5" type="button" id="formSubmitButton">Lägg till</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+
+    // Attach the printLabel function to the "Skriv ut etikett" button click event
+
+
+    $(document).ready(function () {
+        $('#formSubmitButton').click(function () {
+            addProduct();
+        });
+    });
+
+    function clearFields() {
+        $('#typeArticleNumberX').val('');
+        $('#typePurchasePriceX').val('');
+        $('#typeSellingPriceX').val('');
+        $('#typeWeightX').val('');
+        $('#typeDimensionX').val('');
+        $('#typeMaterialX').val('');
+        $('#typeQuantityX').val('');
+    }
+
+    function generateUniqueArticleNumber() {
+        var articleNumberField = document.getElementById("typeArticleNumberX");
+
+        // Generate a random 6-digit numeric article number
+        var articleNumber = Math.floor(100000 + Math.random() * 900000);
+
+        var url = 'CheckArticleNumberAsync?articleNumber=' + articleNumber;
+        console.log(url);
+        // Check if the generated article number already exists in the database
+        $.ajax({
+            url: url,
+            method: 'GET',
+            success: function (exists) {
+                console.log('Article Number Exists:', exists);
+
+                if (exists) {
+                    // If the article number exists, generate a new one recursively
+                    console.log('Article Number exists. Generating a new one...');
+                    generateUniqueArticleNumber();
+                } else {
+                    // Set the generated unique article number to the input field
+                    articleNumberField.value = articleNumber;
+                    console.log('Unique Article Number set:', articleNumber);
+                }
+            },
+            error: function () {
+                // Handle error if the check fails
+                console.error('AJAX, Failed to check article number existence.');
+            }
+        });
+    }
+
+    function addProduct() {
+        var articleNumber = $('#typeArticleNumberX').val();
+        var purchasePrice = $('#typePurchasePriceX').val();
+        var sellingPrice = $('#typeSellingPriceX').val();
+        var weight = $('#typeWeightX').val();
+        var dimension = $('#typeDimensionX').val();
+        var material = $('#typeMaterialX').val();
+        var quantity = $('#typeQuantityX').val();
+
+        $.ajax({
+            url: '/Product/Product',
+            method: 'POST',
+            data: {
+                articleNumber: articleNumber,
+                purchasePrice: purchasePrice,
+                sellingPrice: sellingPrice,
+                weight: weight,
+                dimension: dimension,
+                material: material,
+                quantity: quantity
+            },
+            success: function (response) {
+                if (response.success) {
+                    clearFields();
+                    $('#centerText').text('Product added successfully');
+                    $('#centerText').css('color', 'green');
+                } else {
+                    console.error(response.error);
+                    $('#centerText').text(response.error);
+                    $('#centerText').css('color', 'red');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Failed to add product:', error);
+                console.log('Server response:', xhr.responseText);
+                $('#centerText').text('Failed to add product. Please try again.');
+                $('#centerText').css('color', 'red');
+            }
+        });
+    }
+</script>

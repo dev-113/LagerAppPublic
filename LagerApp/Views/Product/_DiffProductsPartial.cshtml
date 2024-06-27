@@ -1,0 +1,22 @@
+﻿@model StorageCheckVM
+
+<table class="table table-striped table-bordered" id="differenceTable">
+    <thead class="thead-dark">
+        <tr>
+            <th>Artikel Nummer</th>
+            <th>Antal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.DiffProducts != null)
+        {
+            @foreach (var product in Model.DiffProducts)
+            {
+                <tr>
+                    <td>@product.ArticleNumber</td>
+                    <td>@product.Quantity</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

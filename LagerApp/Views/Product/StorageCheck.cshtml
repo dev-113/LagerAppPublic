@@ -1,0 +1,196 @@
+﻿@model StorageCheckVM
+@{
+    ViewData["Title"] = "Kontroll";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <label for="articleNumber" class="form-label">Artikel Nummer</label>
+            <input type="text" class="form-control" id="articleNumber" placeholder="Artikel Nummer" />
+        </div>
+        <div class="col-md-4">
+            <label for="quantity" class="form-label">Antal</label>
+            <input type="text" class="form-control" id="quantity" placeholder="Antal" />
+        </div>
+        <div class="col-md-4" style="margin-top: 32px;">
+            <button class="btn btn-success" id="addListButton">Lägg till i Lista</button>
+            <button class="btn btn-secondary" id="exportListButton" style="margin-left: 30px;">Exportera Lista</button>
+        </div>
+        <div class="col-md-4" style="margin-top: 32px;">
+            <button class="btn btn-warning" id="updateDatabaseButton">Uppdatera Databas</button>
+        </div>
+        <div class="col-md-4" style="margin-top: 32px;">
+            <button class="btn btn-danger" id="clearListButton">Rensa Lista</button>
+        </div>
+        <div class="col-md-4" style="margin-top: 32px;">
+            <button class="btn btn-primary" id="checkDiffButton">Jämför Lager</button>
+        </div>
+    </div>
+</div>
+<br />
+<br />
+<br />
+<div class="container">
+    <div class="row">
+        <div class="col-md-4 table-container">
+            <h3>Databas Produkter</h3>
+            <partial name="_DatabaseProductsPartial" model="Model" />
+        </div>
+
+        <div class="col-md-4 table-container">
+            <h3>Skannad Lista</h3>
+            <partial name="_ListProductsPartial" model="Model" />
+        </div>
+
+        <div class="col-md-4 table-container">
+            <h3>Diff</h3>
+            <partial name="_DiffProductsPartial" model="Model" />
+        </div>
+    </div>
+
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#addListButton').click(function () {
+            addProductToList();
+            $('#articleNumber').val('');
+            $('#quantity').val('');
+        });
+
+        $('#updateDatabaseButton').click(function () {
+            copyListProductsToDatabase();
+        });
+
+        $('#clearListButton').click(function () {
+            clearList();
+        });
+
+        $('#checkDiffButton').click(function () {
+            checkDiff();
+        });
+        
+        $('#exportListButton').click(function () {
+            exportDatabase();
+        });
+    });
+
+    function addProductToList() {
+        var articleNumber = $('#articleNumber').val();
+        var quantity = $('#quantity').val();
+
+        if (!articleNumber || !quantity) {
+            alert('Var god och ange Artikel Nummer och Antal.');
+            return;
+        }
+
+        $.ajax({
+            url: '/Product/AddProductToList',
+            method: 'POST',
+            data: { articleNumber: articleNumber, quantity: quantity },
+            success: function (result) {
+                // Remove existing rows in the scanned products table
+                $('#scannedTable').empty();
+
+                // Append the new rows from the partial view to the scanned products table
+                $('#scannedTable').append(result);
+
+                alert('Product added successfully!');
+                // You can optionally update the UI or perform additional actions after success
+            },
+            error: function () {
+                console.error('Failed to add the product.');
+            }
+        });
+    }
+
+    function copyListProductsToDatabase() {
+        var confirmation = confirm('Är du säker på att du vill skriva över databasen med skannade listan?');
+        if (confirmation) {
+            $.ajax({
+                url: '/Product/CopyListProductsToDatabase',
+                method: 'POST',
+                success: function (result) {
+                    // Remove existing rows in the scanned products table
+                    $('#productsTable').empty();
+
+                    // Append the new rows from the partial view to the scanned products table
+                    $('#productsTable').append(result);
+
+                    // You can optionally update the UI or perform additional actions after success
+                },
+                error: function () {
+                    console.error('Failed to copy to database.');
+                }
+            });
+        }
+    }
+
+    function clearList() {
+        var confirmation = confirm('Är du säker på att du vill rensa listan?');
+        if (confirmation) {
+            $.ajax({
+                url: '/Product/ClearList',
+                method: 'POST',
+                success: function (result) {
+                    // Remove existing rows in the scanned products table
+                    $('#scannedTable').empty();
+
+                    // Append the new rows from the partial view to the scanned products table
+                    $('#scannedTable').append(result);
+
+                    // You can optionally update the UI or perform additional actions after success
+                },
+                error: function () {
+                    console.error('Failed to clear list.');
+                }
+            });
+        }
+    }
+
+    function checkDiff() {
+        var confirmation = confirm('Är du säker på att du vill jämföra databasen med listan?');
+        if (confirmation) {
+            $.ajax({
+                url: '/Product/CheckDiff',
+                method: 'POST',
+                success: function (result) {
+                    // Remove existing rows in the scanned products table
+                    $('#differenceTable').empty();
+
+                    // Append the new rows from the partial view to the scanned products table
+                    $('#differenceTable').append(result);
+                    $('#unmatchedTable').append(result);
+
+                    // You can optionally update the UI or perform additional actions after success
+                },
+                error: function () {
+                    console.error('Failed to check diff.');
+                }
+            });
+        }
+    }
+
+    function exportDatabase() {
+        var confirmation = confirm('Exportera Lista?');
+        if (confirmation) {
+            $.ajax({
+                url: '/Product/ExportListExcel',
+                method: 'POST',
+                success: function (result) {
+                    if (result.success) {
+                        alert(result.message); // Show success message
+                    } else {
+                        alert(result.message); // Show error message
+                    }
+                },
+                error: function () {
+                    console.error('Failed export list.');
+                    alert('Failed export list.');
+                }
+            });
+        }
+    }
+
+</script>

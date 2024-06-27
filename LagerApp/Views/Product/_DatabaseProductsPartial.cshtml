@@ -1,0 +1,22 @@
+﻿@model StorageCheckVM
+
+<table class="table table-striped table-bordered" id="productsTable">
+    <thead class="thead-dark">
+        <tr>
+            <th>Artikel Nummer</th>
+            <th>Antal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.ProductVMs != null)
+        {
+            @foreach (var product in Model.ProductVMs)
+            {
+                <tr>
+                    <td>@product.ArticleNumber</td>
+                    <td>@product.Quantity</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
